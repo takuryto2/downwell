@@ -5,16 +5,31 @@ using UnityEngine;
 public class bullet : MonoBehaviour
 {
     [SerializeField] private float Speed;
-    private Transform Transform;
     public bool death = false;
 
     private void Start()
     {
-        Transform = transform.GetComponent<Transform>();
+        StartCoroutine(SelfDestruct());
     }
 
     private void Update()
     {
-        transform.position = new Vector2(0, -Speed);
+        transform.position += Vector3.down * Speed;
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("Is Destructible"))
+        {
+            Destroy(collision.gameObject);
+            Destroy(gameObject);
+        }
+        
+    }
+
+    IEnumerator SelfDestruct()
+    {
+        yield return new WaitForSeconds(5f);
+        Destroy(gameObject);
     }
 }

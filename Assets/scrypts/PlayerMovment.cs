@@ -1,19 +1,29 @@
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Mathematics;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 public class PlayerMovment : MonoBehaviour
 {
     private Rigidbody2D rb;
+
+    [Header("L/R mouvment")]
     public float moveSpeed;
-    public float jumpForce;
     float horizontalMovment;
-    private bool isGrounded;
-    [SerializeField] private float castDistance;
-    [SerializeField] private Vector2 boxSize;
-    [SerializeField] private LayerMask groundLayer;
+
+    [Header("jump")]
+    public float jumpForce;
+
+    [Header("ground check")]
+    public Transform groundCheckPos;
+    public Vector2 grousndCheckSize = new Vector2(0.5f, 0.05f);
+    public LayerMask groundLayer;
+
+    [Header("shoot")]
+    public GameObject bulletPrefab;
+
 
     void Start()
     {
@@ -23,7 +33,7 @@ public class PlayerMovment : MonoBehaviour
     void Update()
     {
         rb.velocity = new Vector2(horizontalMovment*moveSpeed, rb.velocity.y);
-        Grounded();
+
     }
 
     public void Move(InputAction.CallbackContext context)
@@ -33,7 +43,7 @@ public class PlayerMovment : MonoBehaviour
 
     public void Jump(InputAction.CallbackContext context)
     {
-        if (isGrounded == true)
+        if (IsGrounded() == true)
         {
             if (context.performed)
             {
@@ -44,29 +54,41 @@ public class PlayerMovment : MonoBehaviour
                 rb.velocity = new Vector2(rb.velocity.x, rb.velocity.y * 0.5f);
             }
         }
-        else if (isGrounded == false)
+        else if (IsGrounded() == false)
         {
-            if (rb.velocity.y <= -0.5f)
+            if (context.started)
             {
-                rb.velocity = new Vector2(rb.velocity.x, -0.5f);
+                if (rb.velocity.y <= -0.5f)
+                {
+                    rb.velocity = new Vector2(rb.velocity.x, -0.5f);
+                    Shoot();
+                }
+                else
+                {
+                    Shoot();
+                }
             }
         }
     }
 
-    public void Grounded()
+    private bool IsGrounded()
     {
-        if (Physics.BoxCast(transform.position, boxSize, -transform.up, quaternion.identity, castDistance, groundLayer))
+        if (Physics2D.OverlapBox(groundCheckPos.position, grousndCheckSize, 0, groundLayer))
         {
-            isGrounded = true;
+            return true;
         }
-        else
-        {
-            isGrounded = false;
-        }
+        return false;
     }
 
-    private void OnDrawGizmos()
+    private void OnDrawGizmosSelected()
     {
-        Gizmos.DrawWireCube(transform.position-transform.up * castDistance, boxSize);
+        Gizmos.color = Color.white;
+        Gizmos.DrawCube(groundCheckPos.position, grousndCheckSize);
+    }
+
+    private void Shoot()
+    {
+        Vector2 BulletSpawn = new Vector2(transform.position.x, transform.position.y - 1.25f);
+        Instantiate(bulletPrefab, BulletSpawn, Quaternion.identity);
     }
 }
